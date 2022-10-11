@@ -1,0 +1,125 @@
+/* Global */
+body {
+  font-family: "Helvetica Neue", Helvetica, Roboto, Arial, sans-serif;
+  min-width: 22rem;
+  font-size: 1.125rem;
+}
+
+@media only screen and (min-width: 768px) {
+  body {
+    max-width: 38rem;
+    font-size: 1rem;
+  }
+}
+
+/* Directory listing and playlist tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.125rem 0 0 0;
+}
+
+tr {
+  border-top: thin solid grey;
+  border-bottom: thin solid grey;
+}
+
+td {
+  padding: 0.625rem 0 0.563rem;
+}
+
+tr>td.icon {
+  width: 2rem;
+}
+
+tr>td.icon>* {
+  padding: 0 0.625rem 0 0.625rem;
+}
+
+tr.directory>td.icon>.directory {
+  background: url("folder.svg") center/1rem no-repeat;
+}
+
+tr.file>td.icon>.file {
+  background: url("document.svg") center/1rem no-repeat;
+}
+
+tr.track>td.icon>.button-track-playpause {
+  background: url("play.svg") center/1rem no-repeat;
+}
+
+tr.track.playing>td.icon>.button-track-playpause {
+  background: url("pause.svg") center/1rem no-repeat;
+}
+
+/* Cover */
+.cover {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1.25rem 0 1.25rem 0;
+}
+
+.cover>img {
+  width: 20rem;
+  max-width: 100%;
+}
+
+/* Title */
+.title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Main player controls */
+.controls {
+  display: flex;
+  align-items: center;
+}
+
+.time-elapsed,
+.time-total {
+  padding: 0 0.25rem 0 0.25rem;
+}
+
+.progressbar {
+  flex-grow: 1;
+}
+
+.button-playpause {
+  width: 3rem;
+  height: 3rem;
+  display: inline-block;
+  vertical-align: middle;
+  background: url("play.svg") center/3rem no-repeat;
+}
+
+.button-playpause.playing {
+  background: url("pause.svg") center/3rem no-repeat;
+}
+
+.button-prev,
+.button-next {
+  width: 2rem;
+  height: 2rem;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.button-prev {
+  background: url("play-skip-back.svg") center/1.5rem no-repeat;
+}
+
+.button-next {
+  background: url("play-skip-forward.svg") center/1.5rem no-repeat;
+}
+
+span[class^="button-"] {
+  cursor: pointer;
+}
+
+span[class^="button-"].disabled {
+  opacity: .4;
+  cursor: unset;
+}

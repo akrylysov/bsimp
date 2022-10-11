@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>{{ .CurrentDirectory.Name }}</title>
+	<link rel="icon" href="data:,">
+	{{/* SVG icons used in the stylesheet https://github.com/ionic-team/ionicons */}}
+	<link rel="stylesheet" href="/static/style.css">
+	<script src="/static/player.js"></script>
+</head>
+
+<body>
+
+<div class="path">
+	{{ range $dir := .CurrentDirectory.Parents }}
+		<a href="/library{{ $dir.Path }}">{{ defaultString $dir.Name "Music" }}</a> /
+	{{ end }}
+	{{ defaultString .CurrentDirectory.Name "Music" }}
+</div>
+
+{{ if .Directories }}
+<table class="directory-listing">
+	<tbody>
+	{{ range $dir := .Directories }}
+		<tr class="directory">
+			<td class="icon"><a class="directory" href="/library{{ $dir.Path }}"></a></td>
+			<td>{{ $dir.Name }}</td>
+		</tr>
+	{{ end }}
+	</tbody>
+</table>
+{{ end }}
+
+
+<div class="cover">
+{{ if .Cover }}
+	<img src="/stream{{ .Cover.Path }}" alt="Cover">
+{{ end }}
+</div>
+
+{{ if .AudioTracks }}
+<div class="title"></div>
+
+<div class="controls">
+	<span title="Play/Pause" class="button-playpause"></span>
+	<span class="time-elapsed">00:00</span>
+	<input class="progressbar" type="range" value="0" min="0" max="100" step="1">
+	<span class="time-total">00:00</span>
+	<span title="Previous" class="button-prev disabled"></span>
+	<span title="Next" class="button-next disabled"></span>
+</div>
+
+<table class="playlist">
+	<tbody>
+	{{ range $index, $track := .AudioTracks }}
+		<tr class="track" data-url="/stream{{ $track.Path }}"
+			data-title="{{ $track.FriendlyName}}" data-index="{{ $index }}">
+			<td class="icon"><span class="button-track-playpause"></span></td>
+			<td>{{ $track.FriendlyName}}</td>
+		</tr>
+	{{ end }}
+	{{ range $file := .Files }}
+		<tr class="file">
+			<td class="icon"><a class="file" href="/stream{{ $file.Path }}" target="_blank"></a></td>
+			<td>{{ $file.Name }}</td>
+		</tr>
+	{{ end }}
+	</tbody>
+</table>
+{{ end }}
+
+</body>
+
+</html>
