@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"io"
 	"os"
 	"time"
 
@@ -35,17 +36,29 @@ type Config struct {
 	S3 S3Config
 }
 
-func NewConfig(path string) (*Config, error) {
-	content, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
+var errMissingBucket = errors.New("s3 bucket is required")
+
+func newConfig(r io.Reader) (*Config, error) {
+	cfg := &Config{
+		S3: S3Config{
+			RequestPresignExpiry: Duration(2 * time.Hour),
+		},
 	}
-	cfg := &Config{}
-	if err := toml.Unmarshal(content, cfg); err != nil {
+	dec := toml.NewDecoder(r)
+	if err := dec.Decode(cfg); err != nil {
 		return nil, err
 	}
 	if cfg.S3.Bucket == "" {
-		return nil, errors.New("s3 bucket is required")
+		return nil, errMissingBucket
 	}
 	return cfg, nil
+}
+
+func NewConfig(path string) (*Config, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	return newConfig(f)
 }
