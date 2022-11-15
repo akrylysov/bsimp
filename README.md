@@ -2,7 +2,7 @@
 
 Bsimp is a minimalistic S3-backed audio library. It lets you play audio files from an S3 bucket with any arbitrary directory structure.
 
-It works with AWS S3 or any S3 API compatible storage such as DigitalOcean Spaces or Backblaze B2.
+It works with AWS S3 or any S3 API compatible storage such as DigitalOcean Spaces, Backblaze B2, Cloudflare R2 or MinIO.
 
 ## Why
 
@@ -39,7 +39,19 @@ bucket = "foo"
 [s3.credentials]
 id = "SPACES KEY"
 secret = "SPACES SECRET"
-token = ""
+```
+
+MinIO config example:
+```toml
+[s3]
+region = "local"
+endpoint = "http://localhost:9000"
+bucket = "music"
+force_path_style = true
+
+[s3.credentials]
+id = "minioadmin" 
+secret = "minioadmin"
 ```
 
 ## Running
