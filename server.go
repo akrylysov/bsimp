@@ -27,6 +27,14 @@ func ValidatePath(h http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+// NormalizePath normalizes the request URL by removing the delimeter suffix.
+func NormalizePath(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.URL.Path = strings.TrimRight(r.URL.Path, Delimiter)
+		h(w, r)
+	}
+}
+
 // DisableFileListing disables file listing under directories. It can be used with the built-in http.FileServer.
 func DisableFileListing(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -88,8 +96,8 @@ func StartServer(mediaLib *MediaLibrary, addr string) error {
 		mediaLib: mediaLib,
 		tmpl:     tmpl,
 	}
-	mux.Handle("/library/", http.StripPrefix("/library/", ValidatePath(s.ListingHandler)))
-	mux.Handle("/stream/", http.StripPrefix("/stream/", ValidatePath(s.StreamHandler)))
+	mux.Handle("/library/", http.StripPrefix("/library/", ValidatePath(NormalizePath(s.ListingHandler))))
+	mux.Handle("/stream/", http.StripPrefix("/stream/", ValidatePath(NormalizePath(s.StreamHandler))))
 
 	return http.ListenAndServe(addr, mux)
 }

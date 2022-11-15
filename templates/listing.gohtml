@@ -14,7 +14,7 @@
 
 <div class="path">
 	{{ range $dir := .CurrentDirectory.Parents }}
-		<a href="/library{{ $dir.Path }}">{{ defaultString $dir.Name "Music" }}</a> /
+		<a href="/library/{{ $dir.Path }}">{{ defaultString $dir.Name "Music" }}</a> /
 	{{ end }}
 	{{ defaultString .CurrentDirectory.Name "Music" }}
 </div>
@@ -24,7 +24,7 @@
 	<tbody>
 	{{ range $dir := .Directories }}
 		<tr class="directory">
-			<td class="icon"><a class="directory" href="/library{{ $dir.Path }}"></a></td>
+			<td class="icon"><a class="directory" href="/library/{{ $dir.Path }}"></a></td>
 			<td>{{ $dir.Name }}</td>
 		</tr>
 	{{ end }}
@@ -35,7 +35,7 @@
 
 <div class="cover">
 {{ if .Cover }}
-	<img src="/stream{{ .Cover.Path }}" alt="Cover">
+	<img src="/stream/{{ .Cover.Path }}" alt="Cover">
 {{ end }}
 </div>
 
@@ -54,7 +54,7 @@
 <table class="playlist">
 	<tbody>
 	{{ range $index, $track := .AudioTracks }}
-		<tr class="track" data-url="/stream{{ $track.Path }}"
+		<tr class="track" data-url="/stream/{{ $track.Path }}"
 			data-title="{{ $track.FriendlyName}}" data-index="{{ $index }}">
 			<td class="icon"><span class="button-track-playpause"></span></td>
 			<td>{{ $track.FriendlyName}}</td>
@@ -62,7 +62,7 @@
 	{{ end }}
 	{{ range $file := .Files }}
 		<tr class="file">
-			<td class="icon"><a class="file" href="/stream{{ $file.Path }}" target="_blank"></a></td>
+			<td class="icon"><a class="file" href="/stream/{{ $file.Path }}" target="_blank"></a></td>
 			<td>{{ $file.Name }}</td>
 		</tr>
 	{{ end }}

@@ -4,10 +4,13 @@ import (
 	"errors"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/pelletier/go-toml/v2"
 )
+
+const Delimiter = "/"
 
 type Duration time.Duration
 
@@ -51,6 +54,9 @@ func newConfig(r io.Reader) (*Config, error) {
 	}
 	if cfg.S3.Bucket == "" {
 		return nil, errMissingBucket
+	}
+	if cfg.S3.BasePrefix != "" && !strings.HasSuffix(cfg.S3.BasePrefix, Delimiter) {
+		cfg.S3.BasePrefix += Delimiter
 	}
 	return cfg, nil
 }

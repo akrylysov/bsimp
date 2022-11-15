@@ -32,20 +32,16 @@ func TestStorageDirectory_Parents(t *testing.T) {
 			expected: dirs(),
 		},
 		{
-			p:        "/",
-			expected: dirs(),
+			p:        "a",
+			expected: dirs(""),
 		},
 		{
-			p:        "/a",
-			expected: dirs("/"),
+			p:        "a/b",
+			expected: dirs("", "a"),
 		},
 		{
-			p:        "/a/b",
-			expected: dirs("/", "/a"),
-		},
-		{
-			p:        "/a/b/c",
-			expected: dirs("/", "/a", "/a/b"),
+			p:        "a/b/c",
+			expected: dirs("", "a", "a/b"),
 		},
 	}
 	for _, tc := range testCases {

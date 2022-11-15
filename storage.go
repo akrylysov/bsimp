@@ -12,8 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
-const Delimiter = "/"
-
 type storageEntry struct {
 	path string
 }
@@ -36,9 +34,6 @@ type StorageDirectory struct {
 }
 
 func NewStorageDirectory(p string) *StorageDirectory {
-	if !strings.HasPrefix(p, Delimiter) {
-		p = Delimiter + p
-	}
 	return &StorageDirectory{
 		storageEntry{
 			path: p,
@@ -59,7 +54,7 @@ func ReverseSlice[T any](s []T) {
 // Parents return a slice of all parent directories from the root.
 // E.g. it returns [/, /a, /a/b] for /a/b.
 func (e *StorageDirectory) Parents() []*StorageDirectory {
-	if e.path == Delimiter {
+	if e.path == "" {
 		// The root directory doesn't have any parents.
 		return nil
 	}
@@ -69,7 +64,12 @@ func (e *StorageDirectory) Parents() []*StorageDirectory {
 		p = p[:idx]
 		dirs = append(dirs, NewStorageDirectory(p))
 	}
+
+	// Append root directory.
+	dirs = append(dirs, NewStorageDirectory(""))
+
 	ReverseSlice(dirs)
+
 	return dirs
 }
 
@@ -130,7 +130,7 @@ func (store *S3Storage) prefix(p string) string {
 // path returns a public path exposed to the user from an internal S3 key.
 func (store *S3Storage) path(key string) string {
 	return strings.TrimRight(
-		strings.TrimLeft(key, store.cfg.BasePrefix),
+		strings.TrimPrefix(key, store.cfg.BasePrefix),
 		Delimiter,
 	)
 }
@@ -139,8 +139,11 @@ func (store *S3Storage) path(key string) string {
 func (store *S3Storage) List(p string) ([]*StorageDirectory, []*StorageFile, error) {
 	input := &s3.ListObjectsV2Input{
 		Bucket:    aws.String(store.cfg.Bucket),
-		Prefix:    aws.String(store.prefix(p) + Delimiter),
 		Delimiter: aws.String(Delimiter),
+	}
+	prefix := store.prefix(p)
+	if prefix != "" {
+		input.Prefix = aws.String(prefix + Delimiter)
 	}
 
 	var prefixes []*s3.CommonPrefix
