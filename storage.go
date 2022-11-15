@@ -106,6 +106,9 @@ func NewS3Storage(cfg S3Config) (*S3Storage, error) {
 	if cfg.Credentials != nil {
 		awsConfig.Credentials = credentials.NewStaticCredentials(cfg.Credentials.Id, cfg.Credentials.Secret, cfg.Credentials.Token)
 	}
+	if cfg.ForcePathStyle {
+		awsConfig.S3ForcePathStyle = aws.Bool(true)
+	}
 	sess, err := session.NewSession(&awsConfig)
 	if err != nil {
 		return nil, err

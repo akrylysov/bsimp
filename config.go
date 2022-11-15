@@ -29,6 +29,7 @@ type S3Config struct {
 	Bucket               string
 	BasePrefix           string   `toml:"base_prefix"`
 	RequestPresignExpiry Duration `toml:"request_presign_expiry"`
+	ForcePathStyle       bool     `toml:"force_path_style"`
 	Credentials          *S3Credentials
 }
 
