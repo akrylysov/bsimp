@@ -2,10 +2,13 @@ package main
 
 import (
 	"embed"
+	"errors"
 	"html/template"
 	"io/fs"
 	"net/http"
 	"strings"
+
+	"golang.org/x/exp/slog"
 )
 
 //go:embed templates static
@@ -16,11 +19,20 @@ type Server struct {
 	tmpl     *template.Template
 }
 
+func httpError(r *http.Request, w http.ResponseWriter, err error, code int) {
+	http.Error(w, err.Error(), code)
+	slog.Error("failed request",
+		err,
+		slog.String("url", r.URL.String()),
+		slog.Int("code", code),
+	)
+}
+
 // ValidatePath provides a basic protection from the path traversal vulnerability.
 func ValidatePath(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.Path, "./") || strings.Contains(r.URL.Path, ".\\") {
-			http.Error(w, "invalid path", http.StatusBadRequest)
+			httpError(r, w, errors.New("invalid path"), http.StatusBadRequest)
 			return
 		}
 		h(w, r)
@@ -49,11 +61,11 @@ func DisableFileListing(h http.Handler) http.Handler {
 func (s *Server) ListingHandler(w http.ResponseWriter, r *http.Request) {
 	listing, err := s.mediaLib.List(r.URL.Path)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		httpError(r, w, err, http.StatusInternalServerError)
 		return
 	}
 	if err := s.tmpl.ExecuteTemplate(w, "listing.gohtml", listing); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		httpError(r, w, err, http.StatusInternalServerError)
 		return
 	}
 }
@@ -61,7 +73,7 @@ func (s *Server) ListingHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) StreamHandler(w http.ResponseWriter, r *http.Request) {
 	url, err := s.mediaLib.ContentURL(r.URL.Path)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		httpError(r, w, err, http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, url, http.StatusFound)

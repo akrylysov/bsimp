@@ -2,7 +2,8 @@ package main
 
 import (
 	"flag"
-	"log"
+
+	"golang.org/x/exp/slog"
 )
 
 func main() {
@@ -16,15 +17,19 @@ func main() {
 
 	cfg, err := NewConfig(configPath)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("failed parsing confg", err, slog.String("path", configPath))
+		return
 	}
 
 	store, err := NewS3Storage(cfg.S3)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("failed initializing S3 storage", err)
+		return
 	}
 
 	mediaLib := NewMediaLibrary(store)
 
-	log.Fatal(StartServer(mediaLib, httpAddr))
+	slog.Info("started HTTP server", slog.String("address", httpAddr))
+	err = StartServer(mediaLib, httpAddr)
+	slog.Error("failed starting HTTP server", err)
 }
