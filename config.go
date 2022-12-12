@@ -21,7 +21,7 @@ func (d *Duration) UnmarshalText(data []byte) error {
 }
 
 type S3Credentials struct {
-	Id     string
+	ID     string
 	Secret string
 	Token  string
 }

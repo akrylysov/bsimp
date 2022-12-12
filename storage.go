@@ -104,7 +104,7 @@ func NewS3Storage(cfg S3Config) (*S3Storage, error) {
 		Endpoint: cfg.Endpoint,
 	}
 	if cfg.Credentials != nil {
-		awsConfig.Credentials = credentials.NewStaticCredentials(cfg.Credentials.Id, cfg.Credentials.Secret, cfg.Credentials.Token)
+		awsConfig.Credentials = credentials.NewStaticCredentials(cfg.Credentials.ID, cfg.Credentials.Secret, cfg.Credentials.Token)
 	}
 	if cfg.ForcePathStyle {
 		awsConfig.S3ForcePathStyle = aws.Bool(true)

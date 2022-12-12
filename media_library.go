@@ -22,16 +22,16 @@ func NewMediaLibrary(store *S3Storage) *MediaLibrary {
 	}
 }
 
-func (ml *MediaLibrary) findCover(files []*StorageFile) (*StorageFile, error) {
+func (ml *MediaLibrary) findCover(files []*StorageFile) *StorageFile {
 	candidates := ScoreCovers(files)
 	if len(candidates) == 0 {
 		// TODO: look at subdirectories such as covers, scans and artwork.
-		return nil, nil
+		return nil
 	}
 	sort.SliceStable(candidates, func(i, j int) bool {
 		return candidates[i].Score > candidates[j].Score
 	})
-	return candidates[0].StorageFile, nil
+	return candidates[0].StorageFile
 }
 
 // List returns directory listing under the provided path.
@@ -42,10 +42,7 @@ func (ml *MediaLibrary) List(p string) (*MediaListing, error) {
 	}
 
 	// Find album cover.
-	cover, err := ml.findCover(files)
-	if err != nil {
-		return nil, err
-	}
+	cover := ml.findCover(files)
 
 	// Find audio tracks and separate all other files.
 	var tracks []*StorageFile
