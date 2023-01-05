@@ -98,6 +98,8 @@ func StartServer(mediaLib *MediaLibrary, addr string) error {
 
 	mux := http.NewServeMux()
 
+	mux.Handle("/", http.RedirectHandler("/library/", http.StatusMovedPermanently))
+
 	staticFS, err := fs.Sub(embedFS, "static")
 	if err != nil {
 		return err
