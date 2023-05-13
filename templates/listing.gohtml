@@ -25,7 +25,7 @@
 	{{ range $dir := .Directories }}
 		<tr class="directory">
 			<td class="icon"><a class="directory" href="/library/{{ $dir.Path }}"></a></td>
-			<td>{{ $dir.Name }}</td>
+			<td><a class="directory" href="/library/{{ $dir.Path }}">{{ $dir.Name }}</a></td>
 		</tr>
 	{{ end }}
 	</tbody>
