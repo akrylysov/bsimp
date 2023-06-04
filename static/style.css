@@ -13,43 +13,38 @@ body {
 }
 
 /* Directory listing and playlist tables */
-table {
-  width: 100%;
-  border-collapse: collapse;
+.table {
   margin: 1.125rem 0 0 0;
-}
-
-tr {
   border-top: thin solid grey;
+}
+
+.row {
   border-bottom: thin solid grey;
-}
-
-td {
   padding: 0.625rem 0 0.563rem;
+  display: block;
+  color: inherit;
+  text-decoration: inherit;
 }
 
-tr>td.icon {
-  width: 2rem;
+.icon {
+  padding-left: 2rem;
+  background: center/1rem no-repeat;
 }
 
-tr>td.icon>* {
-  padding: 0 0.625rem 0 0.625rem;
+.icon.folder {
+  background-image: url("folder.svg");
 }
 
-tr.directory>td.icon>.directory {
-  background: url("folder.svg") center/1rem no-repeat;
+.icon.file {
+  background-image: url("document.svg");
 }
 
-tr.file>td.icon>.file {
-  background: url("document.svg") center/1rem no-repeat;
+.track>.icon.button-track-playpause {
+  background-image: url("play.svg");
 }
 
-tr.track>td.icon>.button-track-playpause {
-  background: url("play.svg") center/1rem no-repeat;
-}
-
-tr.track.playing>td.icon>.button-track-playpause {
-  background: url("pause.svg") center/1rem no-repeat;
+.track.playing>.icon.button-track-playpause {
+  background-image: url("pause.svg");
 }
 
 /* Cover */

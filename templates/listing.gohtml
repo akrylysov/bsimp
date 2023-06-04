@@ -20,18 +20,15 @@
 </div>
 
 {{ if .Directories }}
-<table class="directory-listing">
-	<tbody>
+<div class="table">
 	{{ range $dir := .Directories }}
-		<tr class="directory">
-			<td class="icon"><a class="directory" href="/library/{{ $dir.Path }}"></a></td>
-			<td>{{ $dir.Name }}</td>
-		</tr>
+		<a class="row" href="/library/{{ $dir.Path }}">
+			<span class="icon folder"></span>
+			{{ $dir.Name }}
+		</a>
 	{{ end }}
-	</tbody>
-</table>
+</div>
 {{ end }}
-
 
 <div class="cover">
 {{ if .Cover }}
@@ -51,23 +48,21 @@
 	<span title="Next" class="button-next disabled"></span>
 </div>
 
-<table class="playlist">
-	<tbody>
+<div class="table">
 	{{ range $index, $track := .AudioTracks }}
-		<tr class="track" data-url="/stream/{{ $track.Path }}"
+		<div class="row track" data-url="/stream/{{ $track.Path }}"
 			data-title="{{ $track.FriendlyName}}" data-index="{{ $index }}">
-			<td class="icon"><span class="button-track-playpause"></span></td>
-			<td>{{ $track.FriendlyName}}</td>
-		</tr>
+			<span class="icon button-track-playpause"></span>
+			{{ $track.FriendlyName}}
+		</div>
 	{{ end }}
 	{{ range $file := .Files }}
-		<tr class="file">
-			<td class="icon"><a class="file" href="/stream/{{ $file.Path }}" target="_blank"></a></td>
-			<td>{{ $file.Name }}</td>
-		</tr>
+		<a class="row" href="/stream/{{ $file.Path }}" target="_blank">
+			<span class="icon file"></span>
+			{{ $file.Name }}
+		</a>
 	{{ end }}
-	</tbody>
-</table>
+</div>
 {{ end }}
 
 </body>
