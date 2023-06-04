@@ -3,8 +3,10 @@ package main
 import (
 	"embed"
 	"errors"
+	"fmt"
 	"html/template"
 	"io/fs"
+	"math/rand"
 	"net/http"
 	"strings"
 
@@ -15,8 +17,9 @@ import (
 var embedFS embed.FS
 
 type Server struct {
-	mediaLib *MediaLibrary
-	tmpl     *template.Template
+	mediaLib      *MediaLibrary
+	tmpl          *template.Template
+	staticVersion string
 }
 
 func httpError(r *http.Request, w http.ResponseWriter, err error, code int) {
@@ -58,13 +61,22 @@ func DisableFileListing(h http.Handler) http.Handler {
 	})
 }
 
+type TemplateData struct {
+	StaticVersion string
+	*MediaListing
+}
+
 func (s *Server) ListingHandler(w http.ResponseWriter, r *http.Request) {
 	listing, err := s.mediaLib.List(r.URL.Path)
 	if err != nil {
 		httpError(r, w, err, http.StatusInternalServerError)
 		return
 	}
-	if err := s.tmpl.ExecuteTemplate(w, "listing.gohtml", listing); err != nil {
+	tmplData := TemplateData{
+		StaticVersion: s.staticVersion,
+		MediaListing:  listing,
+	}
+	if err := s.tmpl.ExecuteTemplate(w, "listing.gohtml", tmplData); err != nil {
 		httpError(r, w, err, http.StatusInternalServerError)
 		return
 	}
@@ -100,15 +112,18 @@ func StartServer(mediaLib *MediaLibrary, addr string) error {
 
 	mux.Handle("/", http.RedirectHandler("/library/", http.StatusMovedPermanently))
 
+	staticVersion := fmt.Sprintf("%x", rand.Uint64())
 	staticFS, err := fs.Sub(embedFS, "static")
 	if err != nil {
 		return err
 	}
-	mux.Handle("/static/", DisableFileListing(http.StripPrefix("/static/", http.FileServer(http.FS(staticFS)))))
+	staticPath := fmt.Sprintf("/static/%s/", staticVersion)
+	mux.Handle(staticPath, DisableFileListing(http.StripPrefix(staticPath, http.FileServer(http.FS(staticFS)))))
 
 	s := Server{
-		mediaLib: mediaLib,
-		tmpl:     tmpl,
+		mediaLib:      mediaLib,
+		tmpl:          tmpl,
+		staticVersion: staticVersion,
 	}
 	mux.Handle("/library/", http.StripPrefix("/library/", ValidatePath(NormalizePath(s.ListingHandler))))
 	mux.Handle("/stream/", http.StripPrefix("/stream/", ValidatePath(NormalizePath(s.StreamHandler))))
