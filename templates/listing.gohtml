@@ -19,22 +19,11 @@
 	{{ defaultString .CurrentDirectory.Name "Music" }}
 </div>
 
-{{ if .Directories }}
-<div class="table">
-	{{ range $dir := .Directories }}
-		<a class="row" href="/library/{{ $dir.Path }}">
-			<span class="icon folder"></span>
-			{{ $dir.Name }}
-		</a>
-	{{ end }}
-</div>
-{{ end }}
-
-<div class="cover">
 {{ if .Cover }}
+<div class="cover">
 	<img src="/stream/{{ .Cover.Path }}" alt="Cover">
-{{ end }}
 </div>
+{{ end }}
 
 {{ if .AudioTracks }}
 <div class="title"></div>
@@ -47,7 +36,9 @@
 	<span title="Previous" class="button-prev disabled"></span>
 	<span title="Next" class="button-next disabled"></span>
 </div>
+{{ end }}
 
+{{ if or .AudioTracks (or .Files .Directories) }}
 <div class="table">
 	{{ range $index, $track := .AudioTracks }}
 		<div class="row track" data-url="/stream/{{ $track.Path }}"
@@ -55,6 +46,12 @@
 			<span class="icon button-track-playpause"></span>
 			{{ $track.FriendlyName}}
 		</div>
+	{{ end }}
+	{{ range $dir := .Directories }}
+		<a class="row" href="/library/{{ $dir.Path }}">
+			<span class="icon folder"></span>
+			{{ $dir.Name }}
+		</a>
 	{{ end }}
 	{{ range $file := .Files }}
 		<a class="row" href="/stream/{{ $file.Path }}" target="_blank">
