@@ -7,7 +7,7 @@
 	{{ if .Cover }}
 	<link rel="icon" href="/stream/{{ .Cover.Path }}">
 	{{ else }}
-	<link rel="icon" href="data:,">
+	<link rel="icon" href="/static/{{ .StaticVersion }}/favicon.svg">
 	{{ end }}
 	{{/* SVG icons used in the stylesheet https://github.com/ionic-team/ionicons */}}
 	<link rel="stylesheet" href="/static/{{ .StaticVersion }}/style.css">
