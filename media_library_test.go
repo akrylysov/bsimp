@@ -32,7 +32,7 @@ func TestMediaLibrary(t *testing.T) {
 		"music/Aphex Twin/1999 - Windowlicker/Folder.jpg",
 		"music/Aphex Twin/1999 - Windowlicker/back.jpg",
 		"music/Aphex Twin/1999 - Windowlicker/covers/front_cover.jpg",
-		"music/The Prodigy/1992 - The Prodigy Experience/scans/Cover-Case.png",
+		"music/The Prodigy/1992 - The Prodigy Experience/Scans/Cover-Case.png",
 		"music/The Prodigy/1992 - The Prodigy Experience/CD1/01 - Jericho.mp3",
 		"music/The Prodigy/1992 - The Prodigy Experience/CD2/01 - Your Love.mp3",
 		"music/Venetian Snares/2016 - Traditional Synthesizer Music/01. Dreamt Person v3.mp3",
@@ -96,8 +96,9 @@ func TestMediaLibrary(t *testing.T) {
 			Directories: []*StorageDirectory{
 				NewStorageDirectory("The Prodigy/1992 - The Prodigy Experience/CD1"),
 				NewStorageDirectory("The Prodigy/1992 - The Prodigy Experience/CD2"),
-				NewStorageDirectory("The Prodigy/1992 - The Prodigy Experience/scans"),
+				NewStorageDirectory("The Prodigy/1992 - The Prodigy Experience/Scans"),
 			},
+			Cover: NewStorageFile("The Prodigy/1992 - The Prodigy Experience/Scans/Cover-Case.png", 1),
 		},
 		"The Prodigy/1992 - The Prodigy Experience/CD1": {
 			CurrentDirectory: NewStorageDirectory("The Prodigy/1992 - The Prodigy Experience/CD1"),
@@ -126,7 +127,7 @@ func TestMediaLibrary(t *testing.T) {
 	for path, expectedListing := range testCases {
 		l, err := ml.List(path)
 		asrt.NoError(err)
-		asrt.EqualValues(&expectedListing, l)
+		asrt.EqualValues(&expectedListing, l, path)
 	}
 
 	// Path doesn't exist.

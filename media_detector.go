@@ -30,6 +30,13 @@ func IsAudioFile(f *StorageFile) bool {
 	return audioExtensions.Contains(ext)
 }
 
+var artworkDirNames = NewStringSet("scans", "covers", "artwork", "media")
+
+// IsArtworkDir returns whether the given directory may contain cover images.
+func IsArtworkDir(d *StorageDirectory) bool {
+	return artworkDirNames.Contains(strings.ToLower(d.Name()))
+}
+
 type ScoredFile struct {
 	*StorageFile
 	Score int
