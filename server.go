@@ -6,11 +6,10 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
+	"log/slog"
 	"math/rand"
 	"net/http"
 	"strings"
-
-	"golang.org/x/exp/slog"
 )
 
 //go:embed templates static

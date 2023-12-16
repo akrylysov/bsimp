@@ -2,16 +2,8 @@ package main
 
 import (
 	"flag"
-	"math/rand"
-	"time"
-
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
-
-func init() {
-	// Prior to Go 1.20, the random generator is always seeded with Seed(1).
-	rand.Seed(time.Now().UnixNano())
-}
 
 func main() {
 	var (
