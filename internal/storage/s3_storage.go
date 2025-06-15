@@ -1,4 +1,4 @@
-package main
+package storage
 
 import (
 	"errors"
@@ -10,6 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/ginqi7/bsimp/internal/config"
+	"github.com/ginqi7/bsimp/internal/utils"
 )
 
 type storageEntry struct {
@@ -89,16 +91,16 @@ func NewStorageFile(p string, size int64) *StorageFile {
 
 // FriendlyName returns a user-friendly file name. The implementation just returns the name without extension.
 func (e *StorageFile) FriendlyName() string {
-	name, _ := splitNameExt(e.Name())
+	name, _ := utils.SplitNameExt(e.Name())
 	return name
 }
 
 type S3Storage struct {
 	s3  *s3.S3
-	cfg S3Config
+	cfg config.S3Config
 }
 
-func NewS3Storage(cfg S3Config) (*S3Storage, error) {
+func NewS3Storage(cfg config.S3Config) (*S3Storage, error) {
 	awsConfig := aws.Config{
 		Region:   cfg.Region,
 		Endpoint: cfg.Endpoint,
@@ -131,7 +133,7 @@ func (store *S3Storage) prefix(p string) string {
 func (store *S3Storage) path(key string) string {
 	return strings.TrimRight(
 		strings.TrimPrefix(key, store.cfg.BasePrefix),
-		Delimiter,
+		config.Delimiter,
 	)
 }
 
@@ -139,11 +141,11 @@ func (store *S3Storage) path(key string) string {
 func (store *S3Storage) List(p string) ([]*StorageDirectory, []*StorageFile, error) {
 	input := &s3.ListObjectsV2Input{
 		Bucket:    aws.String(store.cfg.Bucket),
-		Delimiter: aws.String(Delimiter),
+		Delimiter: aws.String(config.Delimiter),
 	}
 	prefix := store.prefix(p)
 	if prefix != "" {
-		input.Prefix = aws.String(prefix + Delimiter)
+		input.Prefix = aws.String(prefix + config.Delimiter)
 	}
 
 	var prefixes []*s3.CommonPrefix

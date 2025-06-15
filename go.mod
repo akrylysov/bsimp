@@ -1,4 +1,4 @@
-module github.com/akrylysov/bsimp
+module github.com/ginqi7/bsimp
 
 go 1.21
 

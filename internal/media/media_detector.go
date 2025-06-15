@@ -1,6 +1,10 @@
-package main
+package media
 
-import "strings"
+import (
+	"github.com/ginqi7/bsimp/internal/storage"
+	"github.com/ginqi7/bsimp/internal/utils"
+	"strings"
+)
 
 type StringSet map[string]struct{}
 
@@ -25,36 +29,28 @@ func (ss StringSet) Contains(v string) bool {
 var audioExtensions = NewStringSet("mp3", "m4a", "aac", "ogg", "oga", "flac", "wav")
 
 // IsAudioFile returns whether the given file is an audio file.
-func IsAudioFile(f *StorageFile) bool {
-	_, ext := splitNameExt(strings.ToLower(f.Name()))
+func IsAudioFile(f *storage.StorageFile) bool {
+	_, ext := utils.SplitNameExt(strings.ToLower(f.Name()))
 	return audioExtensions.Contains(ext)
 }
 
 var artworkDirNames = NewStringSet("scans", "covers", "artwork", "media")
 
 // IsArtworkDir returns whether the given directory may contain cover images.
-func IsArtworkDir(d *StorageDirectory) bool {
+func IsArtworkDir(d *storage.StorageDirectory) bool {
 	return artworkDirNames.Contains(strings.ToLower(d.Name()))
 }
 
 type ScoredFile struct {
-	*StorageFile
+	*storage.StorageFile
 	Score int
 }
 
 var imageExtensions = NewStringSet("jpg", "jpeg", "png", "gif")
 var coverNames = NewStringSet("cover", "front", "folder")
 
-func splitNameExt(fullName string) (string, string) {
-	idx := strings.LastIndexByte(fullName, '.')
-	if idx == -1 {
-		return fullName, ""
-	}
-	return fullName[:idx], fullName[idx+1:]
-}
-
-func scoreCover(f *StorageFile) int {
-	name, ext := splitNameExt(strings.ToLower(f.Name()))
+func scoreCover(f *storage.StorageFile) int {
+	name, ext := utils.SplitNameExt(strings.ToLower(f.Name()))
 	if !imageExtensions.Contains(ext) {
 		return -1
 	}
@@ -74,7 +70,7 @@ func scoreCover(f *StorageFile) int {
 
 // ScoreCovers returns a slice of image files scored as album covers.
 // The highest score is more likely to be a cover image.
-func ScoreCovers(files []*StorageFile) []ScoredFile {
+func ScoreCovers(files []*storage.StorageFile) []ScoredFile {
 	var scored []ScoredFile
 	for _, f := range files {
 		score := scoreCover(f)

@@ -1,16 +1,16 @@
-package main
+package storage
 
 import (
+	"github.com/ginqi7/bsimp/internal/config"
 	"os"
 	"path/filepath"
 )
 
 type LocalStorage struct {
-	cfg S3Config
+	cfg config.S3Config
 }
 
-
-func NewLocalStorage(cfg S3Config) (*LocalStorage, error) {
+func NewLocalStorage(cfg config.S3Config) (*LocalStorage, error) {
 	store := LocalStorage{
 		cfg: cfg,
 	}
@@ -18,7 +18,7 @@ func NewLocalStorage(cfg S3Config) (*LocalStorage, error) {
 }
 
 func (store *LocalStorage) List(p string) ([]*StorageDirectory, []*StorageFile, error) {
-	
+
 	var dirs []*StorageDirectory
 	var files []*StorageFile
 	basePath := *store.cfg.Endpoint
@@ -35,7 +35,7 @@ func (store *LocalStorage) List(p string) ([]*StorageDirectory, []*StorageFile, 
 	return dirs, files, nil
 }
 
-func getPath(parent string, p string) (string) {
+func getPath(parent string, p string) string {
 	if len(parent) == 0 {
 		return p
 	} else {
@@ -51,5 +51,3 @@ func (store *LocalStorage) OpenFile(p string) (*os.File, error) {
 	basePath := *store.cfg.Endpoint
 	return os.Open(filepath.Join(basePath, p))
 }
-
-

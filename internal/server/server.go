@@ -1,25 +1,28 @@
-package main
+package server
 
 import (
 	"embed"
 	"errors"
 	"fmt"
+	"github.com/ginqi7/bsimp/internal/auth"
+	"github.com/ginqi7/bsimp/internal/config"
+	"github.com/ginqi7/bsimp/internal/media"
 	"html/template"
 	"io/fs"
 	"log/slog"
 	"math/rand"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
-	"strconv"
 )
 
 //go:embed templates static
 var embedFS embed.FS
 
 type Server struct {
-	mediaLib      *MediaLibrary
-	authLib       *AuthLibrary
+	mediaLib      *media.MediaLibrary
+	authLib       *auth.AuthLibrary
 	tmpl          *template.Template
 	staticVersion string
 }
@@ -27,17 +30,17 @@ type Server struct {
 func httpError(r *http.Request, w http.ResponseWriter, err error, code int) {
 	http.Error(w, err.Error(), code)
 	slog.Error("failed request",
-		err,
+		slog.String("error", err.Error()),
 		slog.String("url", r.URL.String()),
 		slog.Int("code", code),
 	)
 }
 
 // ValidatePath provides a basic protection from the path traversal vulnerability.
-func (s *Server)ValidatePath(h http.HandlerFunc) http.HandlerFunc {
+func (s *Server) ValidatePath(h http.HandlerFunc) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		error := s.authLib.checkCookie(r)
+		error := s.authLib.CheckCookie(r)
 		if error != nil {
 			fmt.Println(error)
 			http.Redirect(w, r, "/login_page/", http.StatusFound)
@@ -54,7 +57,7 @@ func (s *Server)ValidatePath(h http.HandlerFunc) http.HandlerFunc {
 // NormalizePath normalizes the request URL by removing the delimeter suffix.
 func NormalizePath(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		r.URL.Path = strings.TrimRight(r.URL.Path, Delimiter)
+		r.URL.Path = strings.TrimRight(r.URL.Path, config.Delimiter)
 		h(w, r)
 	}
 }
@@ -72,7 +75,7 @@ func DisableFileListing(h http.Handler) http.Handler {
 
 type TemplateData struct {
 	StaticVersion string
-	*MediaListing
+	*media.MediaListing
 }
 
 func (s *Server) ListingHandler(w http.ResponseWriter, r *http.Request) {
@@ -109,17 +112,15 @@ func (s *Server) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	password := r.FormValue("password")
 	cookie := &http.Cookie{
-		Name:     "password",
-		Value:    password,
-		Path:     "/",
-		Expires:  time.Now().Add(24 * time.Hour),
+		Name:    "password",
+		Value:   password,
+		Path:    "/",
+		Expires: time.Now().Add(24 * time.Hour),
 	}
-	
+
 	http.SetCookie(w, cookie)
 	http.Redirect(w, r, "/", http.StatusFound)
 }
-
-
 
 func (s *Server) StreamHandler(w http.ResponseWriter, r *http.Request) {
 	url, err := s.mediaLib.ContentURL(r.URL.Path)
@@ -146,12 +147,12 @@ func (s *Server) AudioHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rangeHeader := r.Header.Get("Range")
-	
+
 	if rangeHeader != "" {
 		var start, end int64
 		_, err := fmt.Sscanf(rangeHeader, "bytes=%d-%d", &start, &end)
 		if err != nil {
-			_, err = fmt.Sscanf(rangeHeader, "bytes=%d-", &start,)
+			_, err = fmt.Sscanf(rangeHeader, "bytes=%d-", &start)
 			end = 0
 			if err != nil {
 				http.Error(w, "Invalid Range", http.StatusRequestedRangeNotSatisfiable)
@@ -167,9 +168,9 @@ func (s *Server) AudioHandler(w http.ResponseWriter, r *http.Request) {
 		if end < 0 || end == 0 {
 			end = fileSize - 1
 		}
-		
+
 		chunkSize := end - start + 1
-			
+
 		// Set Content-Range
 		w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, fileSize))
 		w.Header().Set("Content-Length", strconv.FormatInt(chunkSize, 10))
@@ -184,14 +185,13 @@ func (s *Server) AudioHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		http.ServeContent(w, r, fileInfo.Name(), fileInfo.ModTime(), audioFile)
 	}
-					
+
 	// Set Content-Type
 	w.Header().Set("Content-Type", "audio/mpeg")
-	// Set Accept-Ranges, for Chrome setting `currentTime' 
+	// Set Accept-Ranges, for Chrome setting `currentTime'
 	// reference: https://segmentfault.com/q/1010000002908474
 	w.Header().Set("Accept-Ranges", "bytes")
 }
-
 
 // Don't include sprig just for one function.
 var templateFunctions = map[string]any{
@@ -204,14 +204,13 @@ var templateFunctions = map[string]any{
 }
 
 // StartServer starts HTTP server.
-func StartServer(mediaLib *MediaLibrary, authLib *AuthLibrary, addr string) error {
+func StartServer(mediaLib *media.MediaLibrary, authLib *auth.AuthLibrary, addr string) error {
 	tmpl, err := template.New("").Funcs(templateFunctions).ParseFS(embedFS, "templates/*.gohtml")
 	if err != nil {
 		return err
 	}
 
 	mux := http.NewServeMux()
-
 
 	staticVersion := fmt.Sprintf("%x", rand.Uint64())
 	staticFS, err := fs.Sub(embedFS, "static")
@@ -223,7 +222,7 @@ func StartServer(mediaLib *MediaLibrary, authLib *AuthLibrary, addr string) erro
 
 	s := Server{
 		mediaLib:      mediaLib,
-		authLib: authLib,
+		authLib:       authLib,
 		tmpl:          tmpl,
 		staticVersion: staticVersion,
 	}

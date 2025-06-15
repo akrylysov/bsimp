@@ -1,29 +1,30 @@
-package main
+package media
 
 import (
-	"sort"
+	"github.com/ginqi7/bsimp/internal/storage"
 	"os"
+	"sort"
 )
 
 type MediaListing struct {
-	CurrentDirectory *StorageDirectory
-	Directories      []*StorageDirectory
-	Files            []*StorageFile
-	Cover            *StorageFile
-	AudioTracks      []*StorageFile
+	CurrentDirectory *storage.StorageDirectory
+	Directories      []*storage.StorageDirectory
+	Files            []*storage.StorageFile
+	Cover            *storage.StorageFile
+	AudioTracks      []*storage.StorageFile
 }
 
 type MediaLibrary struct {
-	store *UniversalStorage
+	store *storage.UniversalStorage
 }
 
-func NewMediaLibrary(store *UniversalStorage) *MediaLibrary {
+func NewMediaLibrary(store *storage.UniversalStorage) *MediaLibrary {
 	return &MediaLibrary{
 		store: store,
 	}
 }
 
-func (ml *MediaLibrary) findCover(files []*StorageFile) *StorageFile {
+func (ml *MediaLibrary) findCover(files []*storage.StorageFile) *storage.StorageFile {
 	candidates := ScoreCovers(files)
 	if len(candidates) == 0 {
 		return nil
@@ -34,8 +35,8 @@ func (ml *MediaLibrary) findCover(files []*StorageFile) *StorageFile {
 	return candidates[0].StorageFile
 }
 
-func (ml *MediaLibrary) listArtworkFiles(dirs []*StorageDirectory) ([]*StorageFile, error) {
-	var candidates []*StorageFile
+func (ml *MediaLibrary) listArtworkFiles(dirs []*storage.StorageDirectory) ([]*storage.StorageFile, error) {
+	var candidates []*storage.StorageFile
 	for _, dir := range dirs {
 		if !IsArtworkDir(dir) {
 			continue
@@ -69,8 +70,8 @@ func (ml *MediaLibrary) List(p string) (*MediaListing, error) {
 	}
 
 	// Find audio tracks and separate all other files.
-	var tracks []*StorageFile
-	var otherFiles []*StorageFile
+	var tracks []*storage.StorageFile
+	var otherFiles []*storage.StorageFile
 	for _, f := range files {
 		if IsAudioFile(f) {
 			tracks = append(tracks, f)
@@ -80,7 +81,7 @@ func (ml *MediaLibrary) List(p string) (*MediaListing, error) {
 	}
 
 	listing := &MediaListing{
-		CurrentDirectory: NewStorageDirectory(p),
+		CurrentDirectory: storage.NewStorageDirectory(p),
 		Directories:      dirs,
 		Files:            otherFiles,
 		Cover:            cover,
