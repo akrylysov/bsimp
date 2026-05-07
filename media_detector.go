@@ -22,7 +22,7 @@ func (ss StringSet) Contains(v string) bool {
 }
 
 // TODO: this should probably live in the config.
-var audioExtensions = NewStringSet("mp3", "m4a", "aac", "ogg", "oga", "flac")
+var audioExtensions = NewStringSet("mp3", "m4a", "aac", "ogg", "oga", "flac", "opus")
 
 // IsAudioFile returns whether the given file is an audio file.
 func IsAudioFile(f *StorageFile) bool {
