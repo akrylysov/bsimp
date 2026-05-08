@@ -1,15 +1,16 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"path"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 type storageEntry struct {
@@ -94,30 +95,27 @@ func (e *StorageFile) FriendlyName() string {
 }
 
 type S3Storage struct {
-	s3  *s3.S3
-	cfg S3Config
+	s3        *s3.Client
+	presigner *s3.PresignClient
+	cfg       S3Config
 }
 
-func NewS3Storage(cfg S3Config) (*S3Storage, error) {
-	awsConfig := aws.Config{
-		Region:   cfg.Region,
-		Endpoint: cfg.Endpoint,
-	}
+func NewS3Storage(cfg S3Config) *S3Storage {
+	awsConfig := aws.Config{Region: cfg.Region}
 	if cfg.Credentials != nil {
-		awsConfig.Credentials = credentials.NewStaticCredentials(cfg.Credentials.ID, cfg.Credentials.Secret, cfg.Credentials.Token)
+		awsConfig.Credentials = credentials.NewStaticCredentialsProvider(cfg.Credentials.ID, cfg.Credentials.Secret, cfg.Credentials.Token)
 	}
-	if cfg.ForcePathStyle {
-		awsConfig.S3ForcePathStyle = aws.Bool(true)
+	svc := s3.NewFromConfig(awsConfig, func(o *s3.Options) {
+		if cfg.Endpoint != "" {
+			o.BaseEndpoint = aws.String(cfg.Endpoint)
+		}
+		o.UsePathStyle = cfg.ForcePathStyle
+	})
+	return &S3Storage{
+		s3:        svc,
+		presigner: s3.NewPresignClient(svc),
+		cfg:       cfg,
 	}
-	sess, err := session.NewSession(&awsConfig)
-	if err != nil {
-		return nil, err
-	}
-	store := S3Storage{
-		s3:  s3.New(sess),
-		cfg: cfg,
-	}
-	return &store, nil
 }
 
 // prefix returns an S3 prefix from a public user-provided path.
@@ -136,7 +134,7 @@ func (store *S3Storage) path(key string) string {
 }
 
 // List returns slices of directories and files under the given path.
-func (store *S3Storage) List(p string) ([]*StorageDirectory, []*StorageFile, error) {
+func (store *S3Storage) List(ctx context.Context, p string) ([]*StorageDirectory, []*StorageFile, error) {
 	input := &s3.ListObjectsV2Input{
 		Bucket:    aws.String(store.cfg.Bucket),
 		Delimiter: aws.String(Delimiter),
@@ -146,20 +144,23 @@ func (store *S3Storage) List(p string) ([]*StorageDirectory, []*StorageFile, err
 		input.Prefix = aws.String(prefix + Delimiter)
 	}
 
-	var prefixes []*s3.CommonPrefix
-	var objects []*s3.Object
-	err := store.s3.ListObjectsV2Pages(input, func(page *s3.ListObjectsV2Output, lastPage bool) bool {
+	paginator := s3.NewListObjectsV2Paginator(store.s3, input)
+
+	var prefixes []types.CommonPrefix
+	var objects []types.Object
+
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil, nil, err
+		}
 		prefixes = append(prefixes, page.CommonPrefixes...)
 		for _, object := range page.Contents {
 			// Ignore empty objects used to emulate empty directories.
-			if *object.Size != 0 {
+			if aws.ToInt64(object.Size) != 0 {
 				objects = append(objects, object)
 			}
 		}
-		return true
-	})
-	if err != nil {
-		return nil, nil, err
 	}
 
 	if len(prefixes) == 0 && len(objects) == 0 {
@@ -174,37 +175,42 @@ func (store *S3Storage) List(p string) ([]*StorageDirectory, []*StorageFile, err
 	}
 
 	for _, object := range objects {
-		files = append(files, NewStorageFile(store.path(*object.Key), *object.Size))
+		files = append(files, NewStorageFile(store.path(*object.Key), aws.ToInt64(object.Size)))
 	}
 
 	return dirs, files, nil
 }
 
 // FileSize returns size of the file under the given path.
-func (store *S3Storage) FileSize(p string) (int64, error) {
+func (store *S3Storage) FileSize(ctx context.Context, p string) (int64, error) {
 	input := &s3.HeadObjectInput{
 		Bucket: aws.String(store.cfg.Bucket),
 		Key:    aws.String(store.prefix(p)),
 	}
-	resp, err := store.s3.HeadObject(input)
+	resp, err := store.s3.HeadObject(ctx, input)
 	if err != nil {
 		return 0, err
 	}
-	return *resp.ContentLength, nil
+	return aws.ToInt64(resp.ContentLength), nil
 }
 
 // FileContentURL returns a publicly accessible URL for the file under the given path.
-func (store *S3Storage) FileContentURL(p string) (string, error) {
-	size, err := store.FileSize(p)
+func (store *S3Storage) FileContentURL(ctx context.Context, p string) (string, error) {
+	size, err := store.FileSize(ctx, p)
 	if err != nil {
 		return "", err
 	}
 	if size == 0 {
 		return "", errors.New("no content")
 	}
-	req, _ := store.s3.GetObjectRequest(&s3.GetObjectInput{
-		Bucket: aws.String(store.cfg.Bucket),
-		Key:    aws.String(store.prefix(p)),
-	})
-	return req.Presign(time.Duration(store.cfg.RequestPresignExpiry))
+	presignedURL, err := store.presigner.PresignGetObject(ctx,
+		&s3.GetObjectInput{
+			Bucket: aws.String(store.cfg.Bucket),
+			Key:    aws.String(store.prefix(p)),
+		},
+		s3.WithPresignExpires(time.Duration(store.cfg.RequestPresignExpiry)))
+	if err != nil {
+		return "", err
+	}
+	return presignedURL.URL, nil
 }

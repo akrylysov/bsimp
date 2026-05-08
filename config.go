@@ -27,8 +27,8 @@ type S3Credentials struct {
 }
 
 type S3Config struct {
-	Region               *string
-	Endpoint             *string
+	Region               string
+	Endpoint             string
 	Bucket               string
 	BasePrefix           string   `toml:"base_prefix"`
 	RequestPresignExpiry Duration `toml:"request_presign_expiry"`

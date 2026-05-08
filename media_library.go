@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"sort"
 )
 
@@ -33,13 +34,13 @@ func (ml *MediaLibrary) findCover(files []*StorageFile) *StorageFile {
 	return candidates[0].StorageFile
 }
 
-func (ml *MediaLibrary) listArtworkFiles(dirs []*StorageDirectory) ([]*StorageFile, error) {
+func (ml *MediaLibrary) listArtworkFiles(ctx context.Context, dirs []*StorageDirectory) ([]*StorageFile, error) {
 	var candidates []*StorageFile
 	for _, dir := range dirs {
 		if !IsArtworkDir(dir) {
 			continue
 		}
-		_, files, err := ml.store.List(dir.Path())
+		_, files, err := ml.store.List(ctx, dir.Path())
 		if err != nil {
 			return nil, err
 		}
@@ -49,8 +50,8 @@ func (ml *MediaLibrary) listArtworkFiles(dirs []*StorageDirectory) ([]*StorageFi
 }
 
 // List returns directory listing under the provided path.
-func (ml *MediaLibrary) List(p string) (*MediaListing, error) {
-	dirs, files, err := ml.store.List(p)
+func (ml *MediaLibrary) List(ctx context.Context, p string) (*MediaListing, error) {
+	dirs, files, err := ml.store.List(ctx, p)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +61,7 @@ func (ml *MediaLibrary) List(p string) (*MediaListing, error) {
 
 	if cover == nil {
 		// Scan nested artwork directories for covers.
-		artworkFiles, err := ml.listArtworkFiles(dirs)
+		artworkFiles, err := ml.listArtworkFiles(ctx, dirs)
 		if err != nil {
 			return nil, err
 		}
@@ -89,6 +90,6 @@ func (ml *MediaLibrary) List(p string) (*MediaListing, error) {
 }
 
 // ContentURL returns a public URL to a file under the given path.
-func (ml *MediaLibrary) ContentURL(p string) (string, error) {
-	return ml.store.FileContentURL(p)
+func (ml *MediaLibrary) ContentURL(ctx context.Context, p string) (string, error) {
+	return ml.store.FileContentURL(ctx, p)
 }

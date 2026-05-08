@@ -16,19 +16,13 @@ func main() {
 
 	cfg, err := NewConfig(configPath)
 	if err != nil {
-		slog.Error("failed parsing confg", err, slog.String("path", configPath))
+		slog.Error("failed parsing config", slog.Any("err", err), slog.String("path", configPath))
 		return
 	}
 
-	store, err := NewS3Storage(cfg.S3)
-	if err != nil {
-		slog.Error("failed initializing S3 storage", err)
-		return
-	}
-
-	mediaLib := NewMediaLibrary(store)
+	mediaLib := NewMediaLibrary(NewS3Storage(cfg.S3))
 
 	slog.Info("started HTTP server", slog.String("address", httpAddr))
 	err = StartServer(mediaLib, httpAddr)
-	slog.Error("failed starting HTTP server", err)
+	slog.Error("failed starting HTTP server", slog.Any("err", err))
 }

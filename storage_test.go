@@ -1,13 +1,14 @@
 package main
 
 import (
+	"context"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/johannesboyne/gofakes3"
 	"github.com/johannesboyne/gofakes3/backend/s3mem"
 	"github.com/stretchr/testify/assert"
@@ -62,10 +63,9 @@ func newTestS3Config() (S3Config, func()) {
 	faker := gofakes3.New(backend)
 	ts := httptest.NewServer(faker.Server())
 
-	region := "test"
 	return S3Config{
-		Region:         &region,
-		Endpoint:       &ts.URL,
+		Region:         "test",
+		Endpoint:       ts.URL,
 		Bucket:         "test",
 		ForcePathStyle: true,
 		Credentials: &S3Credentials{
@@ -79,14 +79,14 @@ func newTestS3Config() (S3Config, func()) {
 func TestS3Storage(t *testing.T) {
 	asrt := assert.New(t)
 
+	ctx := context.Background()
 	cfg, closeS3 := newTestS3Config()
 	defer closeS3()
-	s, err := NewS3Storage(cfg)
-	asrt.NoError(err)
+	s := NewS3Storage(cfg)
 
 	put := func(path, content string) {
 		t.Helper()
-		_, err := s.s3.PutObject(&s3.PutObjectInput{
+		_, err := s.s3.PutObject(ctx, &s3.PutObjectInput{
 			Body:   strings.NewReader(content),
 			Bucket: aws.String("test"),
 			Key:    aws.String(path),
@@ -95,22 +95,22 @@ func TestS3Storage(t *testing.T) {
 	}
 
 	// Bucket doesn't exist.
-	_, _, err = s.List("")
+	_, _, err := s.List(ctx, "")
 	asrt.Error(err)
 
 	// Bucket exists, but has no content.
-	_, err = s.s3.CreateBucket(&s3.CreateBucketInput{
+	_, err = s.s3.CreateBucket(ctx, &s3.CreateBucketInput{
 		Bucket: aws.String("test"),
 	})
 	asrt.NoError(err)
 
-	_, _, err = s.List("")
+	_, _, err = s.List(ctx, "")
 	asrt.Error(err)
 
 	// Single file.
 	put("file1.jpg", "1")
 	put("empty", "") // Empty files should be ignored.
-	dirs, files, err := s.List("")
+	dirs, files, err := s.List(ctx, "")
 	asrt.NoError(err)
 	asrt.Empty(dirs)
 	asrt.Len(files, 1)
@@ -119,7 +119,7 @@ func TestS3Storage(t *testing.T) {
 	// Single directory.
 	put("dir1/file2.jpg", "12")
 	put("dir1/empty", "")
-	dirs, files, err = s.List("")
+	dirs, files, err = s.List(ctx, "")
 	asrt.NoError(err)
 	asrt.Len(dirs, 1)
 	asrt.Equal("dir1", dirs[0].path)
@@ -130,7 +130,7 @@ func TestS3Storage(t *testing.T) {
 
 	// Two directories.
 	put("dir2/file3.jpg", "123")
-	dirs, files, err = s.List("")
+	dirs, files, err = s.List(ctx, "")
 	asrt.NoError(err)
 	asrt.Len(dirs, 2)
 	asrt.Equal("dir1", dirs[0].path)
@@ -140,7 +140,7 @@ func TestS3Storage(t *testing.T) {
 
 	// Nested directories.
 	put("dir2/dir22/file4.jpg", "1234")
-	dirs, files, err = s.List("")
+	dirs, files, err = s.List(ctx, "")
 	asrt.NoError(err)
 	asrt.Len(dirs, 2)
 	asrt.Equal("dir1", dirs[0].path)
@@ -148,7 +148,7 @@ func TestS3Storage(t *testing.T) {
 	asrt.Len(files, 1)
 	asrt.Equal("file1.jpg", files[0].path)
 
-	dirs, files, err = s.List("dir1")
+	dirs, files, err = s.List(ctx, "dir1")
 	asrt.NoError(err)
 	asrt.Empty(dirs)
 	asrt.Len(files, 1)
@@ -156,7 +156,7 @@ func TestS3Storage(t *testing.T) {
 	asrt.Equal("file2.jpg", files[0].Name())
 	asrt.Equal("file2", files[0].FriendlyName())
 
-	dirs, files, err = s.List("dir2")
+	dirs, files, err = s.List(ctx, "dir2")
 	asrt.NoError(err)
 	asrt.Len(dirs, 1)
 	asrt.Equal("dir2/dir22", dirs[0].path)
@@ -167,47 +167,47 @@ func TestS3Storage(t *testing.T) {
 	asrt.Len(files, 1)
 	asrt.Equal("dir2/file3.jpg", files[0].path)
 
-	dirs, files, err = s.List("dir2/dir22")
+	dirs, files, err = s.List(ctx, "dir2/dir22")
 	asrt.NoError(err)
 	asrt.Empty(dirs)
 	asrt.Len(files, 1)
 	asrt.Equal("dir2/dir22/file4.jpg", files[0].path)
 
 	// Prefix doexn't exist.
-	_, _, err = s.List("dir3")
+	_, _, err = s.List(ctx, "dir3")
 	asrt.Error(err)
 
-	_, _, err = s.List("dir2/dir23")
+	_, _, err = s.List(ctx, "dir2/dir23")
 	asrt.Error(err)
 
 	// Content URL.
-	url, err := s.FileContentURL("file1.jpg")
+	url, err := s.FileContentURL(ctx, "file1.jpg")
 	asrt.NoError(err)
 	asrt.NotEmpty(url)
 
-	url, err = s.FileContentURL("dir2/dir22/file4.jpg")
+	url, err = s.FileContentURL(ctx, "dir2/dir22/file4.jpg")
 	asrt.NoError(err)
 	asrt.NotEmpty(url)
 
-	url, err = s.FileContentURL("dir2/dir22/file5.jpg")
+	url, err = s.FileContentURL(ctx, "dir2/dir22/file5.jpg")
 	asrt.Error(err)
 	asrt.Empty(url)
 
 	// File size.
-	size, err := s.FileSize("file1.jpg")
+	size, err := s.FileSize(ctx, "file1.jpg")
 	asrt.NoError(err)
 	asrt.EqualValues(1, size)
 
-	size, err = s.FileSize("dir2/dir22/file4.jpg")
+	size, err = s.FileSize(ctx, "dir2/dir22/file4.jpg")
 	asrt.NoError(err)
 	asrt.EqualValues(4, size)
 
-	_, err = s.FileSize("dir2/dir22/file5.jpg")
+	_, err = s.FileSize(ctx, "dir2/dir22/file5.jpg")
 	asrt.Error(err)
 
 	// Base prefix dir1.
 	s.cfg.BasePrefix = "dir1/"
-	dirs, files, err = s.List("")
+	dirs, files, err = s.List(ctx, "")
 	asrt.NoError(err)
 	asrt.Empty(dirs)
 	asrt.Len(files, 1)
@@ -215,7 +215,7 @@ func TestS3Storage(t *testing.T) {
 
 	// Base prefix dir2.
 	s.cfg.BasePrefix = "dir2/"
-	dirs, files, err = s.List("")
+	dirs, files, err = s.List(ctx, "")
 	asrt.NoError(err)
 	asrt.Len(dirs, 1)
 	asrt.Equal("dir22", dirs[0].path)
@@ -224,7 +224,7 @@ func TestS3Storage(t *testing.T) {
 	asrt.Len(files, 1)
 	asrt.Equal("file3.jpg", files[0].path)
 
-	dirs, files, err = s.List("dir22")
+	dirs, files, err = s.List(ctx, "dir22")
 	asrt.NoError(err)
 	asrt.Empty(dirs)
 	asrt.Len(files, 1)
@@ -232,6 +232,6 @@ func TestS3Storage(t *testing.T) {
 
 	// Base prefix doesn't exist.
 	s.cfg.BasePrefix = "dir3/"
-	_, _, err = s.List("")
+	_, _, err = s.List(ctx, "")
 	asrt.Error(err)
 }

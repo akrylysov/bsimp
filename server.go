@@ -24,7 +24,7 @@ type Server struct {
 func httpError(r *http.Request, w http.ResponseWriter, err error, code int) {
 	http.Error(w, err.Error(), code)
 	slog.Error("failed request",
-		err,
+		slog.Any("err", err),
 		slog.String("url", r.URL.String()),
 		slog.Int("code", code),
 	)
@@ -66,7 +66,7 @@ type TemplateData struct {
 }
 
 func (s *Server) ListingHandler(w http.ResponseWriter, r *http.Request) {
-	listing, err := s.mediaLib.List(r.URL.Path)
+	listing, err := s.mediaLib.List(r.Context(), r.URL.Path)
 	if err != nil {
 		httpError(r, w, err, http.StatusInternalServerError)
 		return
@@ -82,7 +82,7 @@ func (s *Server) ListingHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) StreamHandler(w http.ResponseWriter, r *http.Request) {
-	url, err := s.mediaLib.ContentURL(r.URL.Path)
+	url, err := s.mediaLib.ContentURL(r.Context(), r.URL.Path)
 	if err != nil {
 		httpError(r, w, err, http.StatusInternalServerError)
 		return

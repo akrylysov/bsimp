@@ -1,24 +1,25 @@
 package main
 
 import (
+	"context"
 	"strings"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMediaLibrary(t *testing.T) {
 	asrt := assert.New(t)
 
+	ctx := context.Background()
 	cfg, closeS3 := newTestS3Config()
 	defer closeS3()
 	cfg.BasePrefix = "music/"
-	storage, err := NewS3Storage(cfg)
-	asrt.NoError(err)
+	storage := NewS3Storage(cfg)
 
-	_, err = storage.s3.CreateBucket(&s3.CreateBucketInput{
+	_, err := storage.s3.CreateBucket(ctx, &s3.CreateBucketInput{
 		Bucket: aws.String("test"),
 	})
 	asrt.NoError(err)
@@ -39,7 +40,7 @@ func TestMediaLibrary(t *testing.T) {
 		"music/Venetian Snares/2016 - Traditional Synthesizer Music/tracklist.txt",
 	}
 	for _, key := range keys {
-		_, err := storage.s3.PutObject(&s3.PutObjectInput{
+		_, err := storage.s3.PutObject(ctx, &s3.PutObjectInput{
 			Body:   strings.NewReader("1"),
 			Bucket: aws.String("test"),
 			Key:    aws.String(key),
@@ -125,14 +126,14 @@ func TestMediaLibrary(t *testing.T) {
 
 	ml := NewMediaLibrary(storage)
 	for path, expectedListing := range testCases {
-		l, err := ml.List(path)
+		l, err := ml.List(ctx, path)
 		asrt.NoError(err)
 		asrt.EqualValues(&expectedListing, l, path)
 	}
 
 	// Path doesn't exist.
-	_, err = ml.List("music")
+	_, err = ml.List(ctx, "music")
 	asrt.Error(err)
-	_, err = ml.List("The Prodigy/1992 - The Prodigy Experience/CD3")
+	_, err = ml.List(ctx, "The Prodigy/1992 - The Prodigy Experience/CD3")
 	asrt.Error(err)
 }
