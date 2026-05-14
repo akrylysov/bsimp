@@ -30,7 +30,7 @@ function initPlayer() {
   function setTrack(idx) {
     currentTrackIdx = idx;
     const trackEl = trackEls[idx];
-    audio.src = trackEl.dataset.url;
+    audio.src = trackEl.dataset.url.replace(/#/g, "%23");
     titleEl.innerText = trackEl.dataset.title;
 
     if (idx == 0) {
