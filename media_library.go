@@ -40,7 +40,7 @@ func (ml *MediaLibrary) listArtworkFiles(ctx context.Context, dirs []*StorageDir
 		if !IsArtworkDir(dir) {
 			continue
 		}
-		_, files, err := ml.store.List(ctx, dir.Path())
+		_, files, err := ml.store.List(ctx, dir.path)
 		if err != nil {
 			return nil, err
 		}
@@ -74,7 +74,7 @@ func (ml *MediaLibrary) List(ctx context.Context, p string) (*MediaListing, erro
 	for _, f := range files {
 		if IsAudioFile(f) {
 			tracks = append(tracks, f)
-		} else if cover == nil || f.Path() != cover.Path() {
+		} else if cover == nil || f.path != cover.path {
 			otherFiles = append(otherFiles, f)
 		}
 	}

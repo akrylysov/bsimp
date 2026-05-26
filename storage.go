@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"net/url"
 	"path"
 	"strings"
 	"time"
@@ -17,8 +18,9 @@ type storageEntry struct {
 	path string
 }
 
-func (e *storageEntry) Path() string {
-	return e.path
+// URLPath returns the URL-escaped path suitable for embedding as a URL in templates.
+func (e *storageEntry) URLPath() string {
+	return (&url.URL{Path: e.path}).EscapedPath()
 }
 
 func (e *storageEntry) Name() string {

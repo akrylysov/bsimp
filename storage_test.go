@@ -30,6 +30,28 @@ func dirs(paths ...string) []*StorageDirectory {
 	return dirs
 }
 
+func TestStorageEntry_URLPath(t *testing.T) {
+	testCases := []struct {
+		p        string
+		expected string
+	}{
+		{p: "", expected: ""},
+		{p: "plain", expected: "plain"},
+		{p: "a/b/c", expected: "a/b/c"},
+		{p: "Album #1", expected: "Album%20%231"},
+		{p: "Artist/Album #1/Track ?.mp3", expected: "Artist/Album%20%231/Track%20%3F.mp3"},
+		{p: "50% off", expected: "50%25%20off"},
+		{p: "a&b/c+d", expected: "a&b/c+d"},
+		{p: "Психохирурги", expected: "%D0%9F%D1%81%D0%B8%D1%85%D0%BE%D1%85%D0%B8%D1%80%D1%83%D1%80%D0%B3%D0%B8"},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.p, func(t *testing.T) {
+			assert.Equal(t, tc.expected, NewStorageDirectory(tc.p).URLPath())
+			assert.Equal(t, tc.expected, NewStorageFile(tc.p, 0).URLPath())
+		})
+	}
+}
+
 func TestStorageDirectory_Parents(t *testing.T) {
 	testCases := []struct {
 		p        string

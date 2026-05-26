@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>{{ .CurrentDirectory.Name }}</title>
 	{{ if .Cover }}
-	<link rel="icon" href="/stream/{{ .Cover.Path }}">
+	<link rel="icon" href="/stream/{{ .Cover.URLPath }}">
 	{{ else }}
 	<link rel="icon" href="/static/{{ .StaticVersion }}/favicon.svg">
 	{{ end }}
@@ -18,14 +18,14 @@
 
 <div class="path">
 	{{ range $dir := .CurrentDirectory.Parents }}
-		<a href="/library/{{ $dir.Path }}">{{ defaultString $dir.Name "Music" }}</a> /
+		<a href="/library/{{ $dir.URLPath }}">{{ defaultString $dir.Name "Music" }}</a> /
 	{{ end }}
 	{{ defaultString .CurrentDirectory.Name "Music" }}
 </div>
 
 {{ if .Cover }}
 <div class="cover">
-	<img src="/stream/{{ .Cover.Path }}" alt="Cover">
+	<img src="/stream/{{ .Cover.URLPath }}" alt="Cover">
 </div>
 {{ end }}
 
@@ -45,20 +45,20 @@
 {{ if or .AudioTracks (or .Files .Directories) }}
 <div class="table">
 	{{ range $index, $track := .AudioTracks }}
-		<div class="row track" data-url="/stream/{{ $track.Path }}"
+		<div class="row track" data-url="/stream/{{ $track.URLPath }}"
 			data-title="{{ $track.FriendlyName}}" data-index="{{ $index }}">
 			<span class="icon button-track-playpause"></span>
 			{{ $track.FriendlyName}}
 		</div>
 	{{ end }}
 	{{ range $dir := .Directories }}
-		<a class="row" href="/library/{{ $dir.Path }}">
+		<a class="row" href="/library/{{ $dir.URLPath }}">
 			<span class="icon folder"></span>
 			{{ $dir.Name }}
 		</a>
 	{{ end }}
 	{{ range $file := .Files }}
-		<a class="row" href="/stream/{{ $file.Path }}" target="_blank">
+		<a class="row" href="/stream/{{ $file.URLPath }}" target="_blank">
 			<span class="icon file"></span>
 			{{ $file.Name }}
 		</a>
